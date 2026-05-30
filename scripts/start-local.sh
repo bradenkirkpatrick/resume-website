@@ -19,10 +19,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 source "$SCRIPT_DIR/lib.sh"
 
+# Check for force flag in any position (handles npm run start-local -- -f)
 FORCE_RESTART=false
-if [[ "${1:-}" == "-f" ]]; then
-    FORCE_RESTART=true
-fi
+for arg in "$@"; do
+    if [[ "$arg" == "-f" || "$arg" == "--force" ]]; then
+        FORCE_RESTART=true
+        break
+    fi
+done
 
 # ── Dependency check ──────────────────────────────────────────────────────────
 

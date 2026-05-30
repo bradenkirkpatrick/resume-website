@@ -44,7 +44,7 @@ lint-fix:
 
 # Start local development servers
 start-local:
-	npm run start-local
+	npm run start-local -- $(ARGS)
 
 # Stop local development servers
 stop-local:
@@ -52,7 +52,7 @@ stop-local:
 
 # Start production servers
 start-prod:
-	npm run start-prod
+	npm run start-prod -- $(ARGS)
 
 # Stop production servers
 stop-prod:
