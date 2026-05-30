@@ -1,0 +1,24 @@
+{
+  "name": "resume-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack resume website with FastAPI backend and React frontend",
+  "scripts": {
+    "start-local": "bash scripts/start-local.sh",
+    "stop-local": "bash scripts/stop-local.sh",
+    "start-prod": "bash scripts/start-prod.sh",
+    "stop-prod": "bash scripts/stop-prod.sh",
+    "install:backend": "cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "lint": "cd backend && flake8 app tests && black --check app tests && isort --check app tests && cd ../frontend && npm run lint",
+    "lint:fix": "cd backend && black app tests && isort app tests && cd ../frontend && npx eslint --fix src && npx prettier --write src",
+    "test": "cd backend && python3 -m pytest && cd ../frontend && npx vitest run",
+    "test:backend": "cd backend && python3 -m pytest",
+    "test:frontend": "cd frontend && npx vitest run",
+    "test:coverage": "cd backend && python3 -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90 && cd ../frontend && npx vitest run --coverage"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

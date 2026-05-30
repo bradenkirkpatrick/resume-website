@@ -1,0 +1,176 @@
+﻿name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Lint backend (flake8)
+        run: |
+          cd backend
+          flake8 app tests
+
+      - name: Lint backend (black)
+        run: |
+          cd backend
+          black --check app tests
+
+      - name: Lint backend (isort)
+        run: |
+          cd backend
+          isort --check app tests
+
+      - name: Lint frontend (ESLint)
+        run: |
+          cd frontend
+          npm run lint
+
+  test:
+    name: Run Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run backend tests with coverage
+        run: |
+          cd backend
+          python -m pytest -v --cov=app --cov-report=term-missing --cov-fail-under=90
+        env:
+          CORS_ORIGINS: http://localhost:5173
+          ENVIRONMENT: test
+          SECRET_KEY: test-secret-key
+
+      - name: Run frontend tests with coverage
+        run: |
+          cd frontend
+          npx vitest run --coverage
+        env:
+          CI: true
+
+  build:
+    name: Build Frontend
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npx vite build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to EC2
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/resume-website
+
+            # Pull latest code
+            git pull origin main
+
+            # Install any new dependencies
+            source backend/venv/bin/activate
+            pip install -q -r backend/requirements.txt
+            cd frontend && npm ci --silent && cd ..
+
+            # Rebuild frontend
+            cd frontend && npx vite build && cd ..
+
+            # Restart application
+            pm2 restart all
+
+            # Verify deployment
+            echo "Deployment complete!"
+            pm2 status

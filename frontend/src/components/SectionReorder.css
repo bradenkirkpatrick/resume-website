@@ -1,0 +1,132 @@
+.sr-container {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  max-width: 600px;
+}
+
+.sr-header {
+  margin-bottom: 1.5rem;
+}
+
+.sr-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.375rem;
+}
+
+.sr-subtitle {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+.sr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.sr-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  transition: box-shadow 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+  cursor: grab;
+  user-select: none;
+}
+
+.sr-item:active {
+  cursor: grabbing;
+}
+
+.sr-item:hover {
+  box-shadow: var(--shadow);
+}
+
+.sr-dragging {
+  opacity: 0.5;
+  border-color: var(--primary);
+  border-style: dashed;
+  background: var(--primary-light);
+}
+
+.sr-grip {
+  color: var(--gray-400);
+  font-size: 1.25rem;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.sr-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sr-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.sr-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.sr-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.25rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 3px;
+  background: white;
+  color: var(--gray-600);
+  font-size: 0.65rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.1s ease;
+}
+
+.sr-arrow:hover:not(:disabled) {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.sr-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sr-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .sr-container {
+    padding: 1rem;
+  }
+}
