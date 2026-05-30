@@ -8,6 +8,7 @@ the resume as a PDF.
 import os
 
 from fastapi import APIRouter, Response
+from fastapi.responses import RedirectResponse
 
 from app.models import Resume
 from app.services.google_docs import fetch_document_content, parse_resume_from_text
@@ -90,14 +91,21 @@ async def get_resume():
 @router.get("/resume/download")
 async def download_resume():
     """
-    Download the resume as a file.
+    Download the resume as a PDF.
 
-    Returns a JSON file for download. In production, this would
-    generate a PDF from the resume data.
+    Streams the Google Doc's PDF export directly (looks identical to the doc).
+    Falls back to a JSON download if Google Docs is not configured.
     """
+    document_id = os.getenv("GOOGLE_DOCS_ID")
+    if document_id:
+        pdf_url = (
+            f"https://docs.google.com/document/d/{document_id}/export?format=pdf"
+        )
+        return RedirectResponse(url=pdf_url)
+
+    # Fallback: JSON download
     resume = await get_resume()
     json_str = resume.model_dump_json(indent=2)
-
     return Response(
         content=json_str,
         media_type="application/json",

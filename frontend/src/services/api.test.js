@@ -31,34 +31,12 @@ describe("API Service", () => {
     await expect(fetchResume()).rejects.toThrow("Network error");
   });
 
-  it("downloadResume creates a download link", async () => {
-    const blob = new Blob(["test"], { type: "application/json" });
-    mockAxios.get.mockResolvedValue({ data: blob });
-
-    const createObjectURL = vi.fn(() => "blob:test");
-    const revokeObjectURL = vi.fn();
-
-    window.URL.createObjectURL = createObjectURL;
-    window.URL.revokeObjectURL = revokeObjectURL;
-
-    const appendChild = vi.fn();
-    const remove = vi.fn();
-    const click = vi.fn();
-
-    document.body.appendChild = appendChild;
-    document.createElement = vi.fn().mockReturnValue({
-      href: "",
-      setAttribute: vi.fn(),
-      click,
-      remove,
-    });
+  it("downloadResume opens PDF in new tab", async () => {
+    const open = vi.fn();
+    window.open = open;
 
     await downloadResume();
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/resume/download", {
-      responseType: "blob",
-    });
-    expect(createObjectURL).toHaveBeenCalled();
-    expect(click).toHaveBeenCalled();
+    expect(open).toHaveBeenCalledWith("/api/resume/download", "_blank");
   });
 });

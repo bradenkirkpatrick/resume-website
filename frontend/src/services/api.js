@@ -18,22 +18,12 @@ export async function fetchResume() {
 }
 
 /**
- * Download the resume as a file.
- * Triggers a browser download.
+ * Download the resume as a PDF (redirects to Google Docs PDF export).
+ * Opens the PDF in a new tab or triggers download automatically.
  */
 export async function downloadResume() {
-  const response = await apiClient.get("/resume/download", {
-    responseType: "blob",
-  });
-
-  const url = window.URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "resume.json");
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+  // Navigate directly so the redirect to Google Docs PDF works
+  window.open("/api/resume/download", "_blank");
 }
 
 // ── Project Management API ─────────────────────────────────────────────────────
