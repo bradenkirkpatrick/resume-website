@@ -187,7 +187,7 @@ def _split_into_sections(text: str) -> dict[str, str]:
 def _extract_name(text: str) -> str:
     """Extract name from the first non-empty line."""
     for line in text.split("\n"):
-        stripped = line.strip()
+        stripped = line.strip().strip("\ufeff")
         if stripped and not stripped.startswith(("@", "http")):
             return stripped
     return "Unknown"
@@ -229,35 +229,98 @@ def _extract_linkedin_url(text: str) -> Optional[str]:
     return None
 
 
-def _parse_experience(section: str) -> list[Experience]:
-    """Parse work experience entries from section text."""
-    experiences: list[Experience] = []
-    entries = re.split(r"\n(?=[A-Z][a-z]+.*\n)", section.strip())
+def _clean_tab_suffix(text: str) -> str:
+    """Remove tab or multi-space separated suffix (location, date) from a field."""
+    # Try tab first
+    if "\t" in text:
+        return text.split("\t")[0].strip()
+    # Try 3+ spaces (Google Doc uses spaces not tabs)
+    cleaned = re.sub(r"\s{3,}.*", "", text).strip()
+    return cleaned if cleaned else text
 
-    for entry in entries:
-        lines = [ln.strip() for ln in entry.split("\n") if ln.strip()]
-        if not lines:
+
+def _extract_dates(text: str):
+    """Extract start/end dates from a string like 'Aug 2022 - Aug 2023' or 'May 2026'."""
+    dates = re.findall(r"(\w+\s+\d{4})", text)
+    start_date = _parse_date(dates[0]) if dates else date.today()
+    end_date = _parse_date(dates[1]) if len(dates) > 1 else None
+    return start_date, end_date
+
+
+def _parse_experience(section: str) -> list[Experience]:
+    """
+    Parse work experience entries.
+
+    Handles the Google Doc format:
+        Company Name\tLocation
+        Job Title\tDate Range - Date Range
+        * Bullet point
+        * Bullet point
+
+        Next Company...
+    """
+    experiences: list[Experience] = []
+    lines = [ln.strip() for ln in section.split("\n") if ln.strip()]
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        # Skip lines that are just bullet points without a preceding header
+        if line.startswith("*") or line.startswith("-"):
+            i += 1
             continue
 
-        company = lines[0]
-        title = lines[1] if len(lines) > 1 else ""
-        date_range = lines[2] if len(lines) > 2 else ""
+        # Line is a company/project name (no date pattern)
+        has_date = bool(re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", line))
 
-        dates = re.findall(r"(\w+\s+\d{4})", date_range)
-        start_date = _parse_date(dates[0]) if dates else date.today()
-        end_date = _parse_date(dates[1]) if len(dates) > 1 else None
+        if not has_date:
+            company = line
+            company_clean = _clean_tab_suffix(company)
+            i += 1
 
-        description = [ln for ln in lines[3:] if not re.match(r"^\w+\s+\d{4}", ln)]
+            # Next non-bullet line is the title + date range
+            title = ""
+            start_date = date.today()
+            end_date = None
+            description = []
 
-        experiences.append(
-            Experience(
-                company=company,
-                title=title,
-                start_date=start_date,
-                end_date=end_date,
-                description=description,
+            if i < len(lines) and not lines[i].startswith("*") and not lines[i].startswith("-"):
+                title_line = lines[i]
+                title_clean = _clean_tab_suffix(title_line)
+                has_date_in_title = bool(re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", title_line))
+
+                if has_date_in_title:
+                    # Title line contains the date range
+                    title = re.sub(r"\s{2,}.*", "", title_line).strip() if "  " in title_line else _clean_tab_suffix(title_line.split("\t")[0])
+                    start_date, end_date = _extract_dates(title_line)
+                else:
+                    title = title_clean
+
+                i += 1
+
+                # Collect bullet points
+                while i < len(lines) and (lines[i].startswith("*") or lines[i].startswith("-")):
+                    bp = lines[i].lstrip("* -").strip()
+                    if bp:
+                        description.append(bp)
+                    i += 1
+            else:
+                # No title line — try to extract dates from company line
+                start_date, end_date = _extract_dates(company)
+
+            experiences.append(
+                Experience(
+                    company=company_clean,
+                    title=title,
+                    start_date=start_date,
+                    end_date=end_date,
+                    description=description,
+                )
             )
-        )
+        else:
+            # Line starts with a date — might be a standalone experience or leftover
+            i += 1
 
     return experiences
 
@@ -272,12 +335,25 @@ def _parse_education(section: str) -> list[Education]:
         if len(lines) < 2:
             continue
 
+        # Clean tab-separated suffixes from institution and degree
+        institution = _clean_tab_suffix(lines[0])
+        degree_line = lines[1] if len(lines) > 1 else ""
+        degree = _clean_tab_suffix(degree_line)
+
+        # Try to extract graduation date from the degree line
+        grad_date = _parse_date(degree_line.split("\t")[-1].strip()) if "\t" in degree_line else date.today()
+        # Also check the full section for dates
+        for ln in lines:
+            d = re.findall(r"(\w+\s+\d{4})", ln)
+            if d:
+                grad_date = _parse_date(d[-1])
+
         education_list.append(
             Education(
-                institution=lines[0],
-                degree=lines[1] if len(lines) > 1 else "",
-                field_of_study=lines[2] if len(lines) > 2 else "",
-                graduation_date=_parse_date(lines[-1]) if lines else date.today(),
+                institution=institution,
+                degree=degree,
+                field_of_study=lines[2].lstrip("* ").strip() if len(lines) > 2 else "",
+                graduation_date=grad_date,
             )
         )
 
@@ -334,17 +410,22 @@ def _parse_projects(section: str) -> list[Project]:
             else:
                 personal_title = second_line
 
+        # Clean project name — remove tab-separated location suffix
+        project_name = _clean_tab_suffix(lines[0])
+        # Also handle "Name        Location" with multiple spaces
+        project_name = re.sub(r"\s{2,}.*", "", project_name).strip()
+
         projects.append(
             Project(
-                name=lines[0],
+                name=project_name,
                 personal_title=personal_title,
-                description=lines[2] if len(lines) > 2 else "",
+                description=lines[2].lstrip("* ").strip() if len(lines) > 2 else "",
                 technologies=(
                     lines[2].split(", ")
                     if len(lines) > 2 and not lines[2].startswith("*")
                     else (
                         lines[3].split(", ")
-                        if len(lines) > 3
+                        if len(lines) > 3 and not lines[3].startswith("*")
                         else []
                     )
                 ),

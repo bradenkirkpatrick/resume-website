@@ -52,6 +52,11 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
+.nav-btn-active {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: white;
+}
+
 .download-btn {
   display: inline-flex;
   align-items: center;
@@ -129,6 +134,37 @@
 
 .retry-btn:hover {
   background: var(--primary-dark);
+}
+.raw-doc-container {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.raw-doc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.raw-doc-subtitle {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.raw-doc-content {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  color: var(--gray-800);
 }
 
 .app-footer {

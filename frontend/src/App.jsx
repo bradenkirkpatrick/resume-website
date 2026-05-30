@@ -9,8 +9,9 @@ function App() {
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [view, setView] = useState("resume"); // "resume" | "projects" | "customize"
+  const [view, setView] = useState("resume"); // "resume" | "projects" | "customize" | "rawdoc"
   const [sectionOrder, setSectionOrder] = useState(null);
+  const [rawDoc, setRawDoc] = useState(null);
 
   async function loadResume() {
     try {
@@ -48,6 +49,17 @@ function App() {
     }
   }
 
+  async function loadRawDoc() {
+    try {
+      const resp = await fetch("/api/resume/raw");
+      const text = await resp.text();
+      setRawDoc(text);
+      setView("rawdoc");
+    } catch (err) {
+      console.error("Error loading raw doc:", err);
+    }
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -57,10 +69,22 @@ function App() {
             {view === "resume" ? (
               <>
                 <button
+                  className={`nav-btn ${view === "rawdoc" ? "nav-btn-active" : ""}`}
+                  onClick={loadRawDoc}
+                >
+                  Doc View
+                </button>
+                <button
                   className="nav-btn"
                   onClick={() => setView("customize")}
                 >
                   Customize Order
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => { setView("resume"); loadSectionOrder(); }}
+                >
+                  Resume View
                 </button>
                 <button
                   className="nav-btn"
@@ -104,6 +128,16 @@ function App() {
 
         {view === "customize" && (
           <SectionReorder onDone={() => { setView("resume"); loadSectionOrder(); }} />
+        )}
+
+        {view === "rawdoc" && rawDoc && (
+          <div className="raw-doc-container">
+            <h2 className="raw-doc-title">Google Doc Content</h2>
+            <p className="raw-doc-subtitle">
+              This is the raw text from your Google Doc. Edits made there appear here on refresh.
+            </p>
+            <pre className="raw-doc-content">{rawDoc}</pre>
+          </div>
         )}
 
         {view === "resume" && loading && (

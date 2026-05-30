@@ -103,3 +103,25 @@ async def test_resume_from_google_doc(client: AsyncClient):
             os.environ.pop("GOOGLE_DOCS_ID", None)
         if old_creds is not None:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_creds
+
+
+async def test_raw_resume_endpoint(client: AsyncClient):
+    """Test that the raw resume endpoint returns doc content."""
+    import os
+
+    old_id = os.environ.get("GOOGLE_DOCS_ID")
+    old_creds = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+    os.environ["GOOGLE_DOCS_ID"] = "1IvKov91tVgnB4mHLVjz1s18q9OJnNeWyh3mNsmG3n84"
+
+    try:
+        response = await client.get("/api/resume/raw")
+        assert response.status_code == 200
+        assert "Braden" in response.text
+        assert "EDUCATION" in response.text
+    finally:
+        if old_id:
+            os.environ["GOOGLE_DOCS_ID"] = old_id
+        else:
+            os.environ.pop("GOOGLE_DOCS_ID", None)
+        if old_creds is not None:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_creds

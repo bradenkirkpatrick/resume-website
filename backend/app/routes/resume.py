@@ -8,10 +8,14 @@ the resume as a PDF.
 import os
 
 from fastapi import APIRouter, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from app.models import Resume
-from app.services.google_docs import fetch_document_content, parse_resume_from_text
+from app.services.google_docs import (
+    _fetch_via_public_export,
+    fetch_document_content,
+    parse_resume_from_text,
+)
 
 router = APIRouter(tags=["resume"])
 
@@ -111,3 +115,18 @@ async def download_resume():
         media_type="application/json",
         headers={"Content-Disposition": "attachment; filename=resume.json"},
     )
+
+
+@router.get("/resume/raw")
+async def get_raw_resume():
+    """
+    Get the raw Google Doc text content.
+    Useful for seeing exactly what the doc contains.
+    """
+    document_id = os.getenv("GOOGLE_DOCS_ID")
+    if document_id:
+        content = _fetch_via_public_export(document_id)
+        if content:
+            return PlainTextResponse(content=content)
+
+    return PlainTextResponse(content="No Google Doc configured.", status_code=404)
