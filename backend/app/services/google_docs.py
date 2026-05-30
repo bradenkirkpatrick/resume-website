@@ -127,6 +127,7 @@ def parse_resume_from_text(text: str) -> Resume:
     email = _extract_email(text)
     phone = _extract_phone(text)
     location = _extract_location(text)
+    linkedin_url = _extract_linkedin_url(text)
 
     summary = sections.get("summary", "")
     experience = _parse_experience(sections.get("experience", ""))
@@ -140,6 +141,7 @@ def parse_resume_from_text(text: str) -> Resume:
         email=email,
         phone=phone,
         location=location,
+        linkedin_url=linkedin_url,
         summary=summary.strip(),
         experience=experience,
         education=education,
@@ -203,13 +205,27 @@ def _extract_phone(text: str) -> Optional[str]:
     return match.group(1).strip() if match else None
 
 
+LINKEDIN_URL = "https://www.linkedin.com/in/braden-kirkpatrick/"
+
+
 def _extract_location(text: str) -> Optional[str]:
-    """Extract location from text near contact info."""
+    """Extract location from text near contact info, stripping LinkedIn."""
     lines = text.split("\n")
     for line in lines[1:4]:
         stripped = line.strip()
-        if re.search(r"[,]?\s*(?:CA|NY|TX|FL|IL|PA|OH|GA|NC|MI|WA|AZ|CO|MA|OR|MN)", stripped):
-            return stripped
+        # Remove LinkedIn mention from location string
+        cleaned = re.sub(r"\s*•\s*LinkedIn\s*•?.*", "", stripped).strip()
+        if re.search(r"[,]?\s*(?:CA|NY|TX|FL|IL|PA|OH|GA|NC|MI|WA|AZ|CO|MA|OR|MN)", cleaned):
+            return cleaned
+    return None
+
+
+def _extract_linkedin_url(text: str) -> Optional[str]:
+    """Detect if 'LinkedIn' appears in the contact info and return the URL."""
+    lines = text.split("\n")
+    for line in lines[1:4]:
+        if "LinkedIn" in line:
+            return LINKEDIN_URL
     return None
 
 

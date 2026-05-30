@@ -35,10 +35,20 @@
   font-size: 0.925rem;
 }
 
-.resume-contact span:not(:last-child)::after {
+.resume-contact > *:not(:last-child)::after {
   content: "·";
   margin-left: 1rem;
   color: var(--gray-400);
+}
+
+.resume-linkedin {
+  color: #0a66c2;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.resume-linkedin:hover {
+  text-decoration: underline;
 }
 
 .resume-section {

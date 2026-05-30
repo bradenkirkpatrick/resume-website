@@ -55,6 +55,7 @@ class Resume(BaseModel):
     email: str = Field(..., description="Email address")
     phone: Optional[str] = Field(None, description="Phone number")
     location: Optional[str] = Field(None, description="Location")
+    linkedin_url: Optional[str] = Field(None, description="LinkedIn profile URL")
     summary: str = Field(..., description="Professional summary")
     experience: list[Experience] = Field(default_factory=list, description="Work experience")
     education: list[Education] = Field(default_factory=list, description="Education history")

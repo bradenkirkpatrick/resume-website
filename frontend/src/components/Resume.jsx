@@ -181,6 +181,16 @@ function Resume({ data, sectionOrder }) {
           {data.email && <span>{data.email}</span>}
           {data.phone && <span>{data.phone}</span>}
           {data.location && <span>{data.location}</span>}
+          {data.linkedin_url && (
+            <a
+              href={data.linkedin_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="resume-linkedin"
+            >
+              LinkedIn
+            </a>
+          )}
         </div>
       </div>
 
