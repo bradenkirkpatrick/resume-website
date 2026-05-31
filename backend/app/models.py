@@ -97,6 +97,7 @@ class ProjectCreate(BaseModel):
     frameworks: list[str] = Field(default_factory=list)
     languages: list[str] = Field(default_factory=list)
     technologies: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class ProjectUpdate(BaseModel):
@@ -108,6 +109,7 @@ class ProjectUpdate(BaseModel):
     frameworks: Optional[list[str]] = None
     languages: Optional[list[str]] = None
     technologies: Optional[list[str]] = None
+    tags: Optional[list[str]] = None
 
 
 class ProjectOut(BaseModel):
@@ -121,6 +123,7 @@ class ProjectOut(BaseModel):
     frameworks: list[str] = Field(default_factory=list)
     languages: list[str] = Field(default_factory=list)
     technologies: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

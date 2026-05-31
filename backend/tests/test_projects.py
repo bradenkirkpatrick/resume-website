@@ -42,6 +42,7 @@ async def test_create_project_full(client: AsyncClient):
         "languages": ["Python", "TypeScript"],
         "frameworks": ["React", "FastAPI"],
         "technologies": ["Docker"],
+        "tags": ["web", "fullstack"],
         "bullet_points": ["Built frontend", "Designed API"],
     })
     assert resp.status_code == 201
@@ -50,6 +51,8 @@ async def test_create_project_full(client: AsyncClient):
     assert "Python" in d["languages"]
     assert "React" in d["frameworks"]
     assert "Docker" in d["technologies"]
+    assert "web" in d["tags"]
+    assert "fullstack" in d["tags"]
     assert len(d["bullet_points"]) == 2
 
 
@@ -136,6 +139,20 @@ async def test_query_frameworks(client: AsyncClient):
         "person_id": pid, "project_name": "P1", "frameworks": ["React"],
     })
     assert "React" in (await client.get("/api/projects/frameworks/all")).json()
+
+
+async def test_query_tags(client: AsyncClient):
+    pid = await _create_person(client)
+    await client.post("/api/projects", json={
+        "person_id": pid, "project_name": "P1", "tags": ["web", "api"],
+    })
+    await client.post("/api/projects", json={
+        "person_id": pid, "project_name": "P2", "tags": ["api", "backend"],
+    })
+    resp = await client.get("/api/projects/tags/all")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "web" in data and "api" in data and "backend" in data
 
 
 async def test_partial_update_preserves_categories(client: AsyncClient):

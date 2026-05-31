@@ -86,6 +86,7 @@ class ProjectDB(Base):
     frameworks = Column(Text, nullable=True)     # JSON array of strings
     languages = Column(Text, nullable=True)      # JSON array of strings
     technologies = Column(Text, nullable=True)   # JSON array of strings
+    tags = Column(Text, nullable=True)           # JSON array of strings
 
     person = relationship("PersonDB", back_populates="projects")
 

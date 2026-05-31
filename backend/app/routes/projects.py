@@ -25,6 +25,7 @@ def _to_out(p: ProjectDB) -> ProjectOut:
         frameworks=parse_json_list(p.frameworks),
         languages=parse_json_list(p.languages),
         technologies=parse_json_list(p.technologies),
+        tags=parse_json_list(p.tags),
     )
 
 
@@ -57,6 +58,7 @@ async def create_project(data: ProjectCreate, db: Session = Depends(get_db)):
         frameworks=json_list(data.frameworks),
         languages=json_list(data.languages),
         technologies=json_list(data.technologies),
+        tags=json_list(data.tags),
     )
     db.add(p)
     db.commit()
@@ -70,7 +72,7 @@ async def update_project(project_id: int, data: ProjectUpdate, db: Session = Dep
     if not p:
         raise HTTPException(404, "Project not found")
     upd = data.model_dump(exclude_unset=True)
-    for lst_field in ("bullet_points", "frameworks", "languages", "technologies"):
+    for lst_field in ("bullet_points", "frameworks", "languages", "technologies", "tags"):
         if lst_field in upd and upd[lst_field] is not None:
             upd[lst_field] = json_list(upd[lst_field])
     for k, v in upd.items():
@@ -116,3 +118,8 @@ async def get_all_languages(db: Session = Depends(get_db)):
 @router.get("/frameworks/all", response_model=list[str])
 async def get_all_frameworks(db: Session = Depends(get_db)):
     return _collect_unique_field(db, "frameworks")
+
+
+@router.get("/tags/all", response_model=list[str])
+async def get_all_tags(db: Session = Depends(get_db)):
+    return _collect_unique_field(db, "tags")
