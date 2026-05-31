@@ -23,7 +23,7 @@ async def test_app_version(client: AsyncClient):
     """Test that the API version is correct."""
     response = await client.get("/openapi.json")
     assert response.status_code == 200
-    assert response.json()["info"]["version"] == "1.0.0"
+    assert response.json()["info"]["version"] == "2.0.0"
 
 
 async def test_cors_headers(client: AsyncClient):

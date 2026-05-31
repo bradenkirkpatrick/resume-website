@@ -1,16 +1,18 @@
 """
 Database configuration and session management for the Resume Website.
 
-Uses SQLAlchemy with SQLite for persistent storage of user-managed
-projects, technologies, bullet points, and tags.
+Uses SQLAlchemy with SQLite for persistent storage of resume data
+organized into normalized tables: Person, Education, Projects, Experiences.
 """
 
+import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -32,97 +34,81 @@ class Base(DeclarativeBase):
     pass
 
 
-# Association table for project-tag many-to-many
-class ProjectTag(Base):
-    __tablename__ = "project_tags"
+# ── Person ─────────────────────────────────────────────────────────────────────
 
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+class PersonDB(Base):
+    __tablename__ = "person"
 
-    project = relationship("ProjectDB", back_populates="project_tags")
-    tag = relationship("TagDB", back_populates="project_tags")
+    person_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255), nullable=False)
+    city = Column(String(100), nullable=True)
+    state = Column(String(50), nullable=True)
+    linkedin_url = Column(String(500), nullable=True)
+    email = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
 
+    education = relationship("EducationDB", back_populates="person", cascade="all, delete-orphan")
+    projects = relationship("ProjectDB", back_populates="person", cascade="all, delete-orphan")
+    experiences = relationship("ExperienceDB", back_populates="person", cascade="all, delete-orphan")
+
+
+# ── Education ──────────────────────────────────────────────────────────────────
+
+class EducationDB(Base):
+    __tablename__ = "education"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    person_id = Column(Integer, ForeignKey("person.person_id", ondelete="CASCADE"), nullable=False)
+    school = Column(String(255), nullable=False)
+    city = Column(String(100), nullable=True)
+    state = Column(String(50), nullable=True)
+    degree = Column(String(255), nullable=True)
+    degree_minor = Column(String(255), nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
+    relevant_courses = Column(Text, nullable=True)  # comma-separated
+
+    person = relationship("PersonDB", back_populates="education")
+
+
+# ── Projects ───────────────────────────────────────────────────────────────────
 
 class ProjectDB(Base):
     __tablename__ = "projects"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False)
-    personal_title = Column(String(255), nullable=True)
-    start_month = Column(Integer, nullable=False)
-    start_year = Column(Integer, nullable=False)
-    end_month = Column(Integer, nullable=True)
-    end_year = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    person_id = Column(Integer, ForeignKey("person.person_id", ondelete="CASCADE"), nullable=False)
+    project_name = Column(String(255), nullable=False)
+    project_role = Column(String(255), nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
+    bullet_points = Column(Text, nullable=True)  # JSON array of strings
+    frameworks = Column(Text, nullable=True)     # JSON array of strings
+    languages = Column(Text, nullable=True)      # JSON array of strings
+    technologies = Column(Text, nullable=True)   # JSON array of strings
 
-    technologies = relationship(
-        "TechItemDB",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        primaryjoin="and_(ProjectDB.id == TechItemDB.project_id, TechItemDB.category == 'technology')",
-        viewonly=True,
-    )
-    frameworks = relationship(
-        "TechItemDB",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        primaryjoin="and_(ProjectDB.id == TechItemDB.project_id, TechItemDB.category == 'framework')",
-        viewonly=True,
-    )
-    languages = relationship(
-        "TechItemDB",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        primaryjoin="and_(ProjectDB.id == TechItemDB.project_id, TechItemDB.category == 'language')",
-        viewonly=True,
-    )
-    all_tech_items = relationship(
-        "TechItemDB",
-        back_populates="project",
-        cascade="all, delete-orphan",
-    )
-    bullet_points = relationship(
-        "BulletPointDB",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        order_by="BulletPointDB.order",
-    )
-    project_tags = relationship(
-        "ProjectTag", back_populates="project", cascade="all, delete-orphan"
-    )
+    person = relationship("PersonDB", back_populates="projects")
 
 
-class TechItemDB(Base):
-    __tablename__ = "tech_items"
+# ── Experiences ────────────────────────────────────────────────────────────────
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    category = Column(String(50), nullable=False)  # 'technology', 'framework', or 'language'
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"))
+class ExperienceDB(Base):
+    __tablename__ = "experiences"
 
-    project = relationship("ProjectDB", back_populates="all_tech_items")
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    person_id = Column(Integer, ForeignKey("person.person_id", ondelete="CASCADE"), nullable=False)
+    company = Column(String(255), nullable=False)
+    city = Column(String(100), nullable=True)
+    state = Column(String(50), nullable=True)
+    role = Column(String(255), nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
+    bullet_points = Column(Text, nullable=True)  # JSON array of strings
 
-
-class BulletPointDB(Base):
-    __tablename__ = "bullet_points"
-
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(Text, nullable=False)
-    order = Column(Integer, default=0)
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"))
-
-    project = relationship("ProjectDB", back_populates="bullet_points")
+    person = relationship("PersonDB", back_populates="experiences")
 
 
-class TagDB(Base):
-    __tablename__ = "tags"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)
-
-    project_tags = relationship("ProjectTag", back_populates="tag")
-
+# ── Section Order ──────────────────────────────────────────────────────────────
 
 class SectionOrderDB(Base):
     """Stores the display order of resume sections as a comma-separated list."""
@@ -131,6 +117,27 @@ class SectionOrderDB(Base):
 
     id = Column(Integer, primary_key=True, index=True, default=1)
     section_order = Column(Text, nullable=False, default="")
+
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def json_list(value):
+    """Serialize a list to JSON string for storage, or return empty array string."""
+    if not value:
+        return "[]"
+    return json.dumps(value)
+
+
+def parse_json_list(value):
+    """Parse a JSON string back to a list."""
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 def init_db():

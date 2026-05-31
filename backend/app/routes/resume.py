@@ -10,7 +10,7 @@ import os
 from fastapi import APIRouter, Response
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
-from app.models import Resume
+from app.models import ResumeLegacy
 from app.services.google_docs import (
     _fetch_via_public_export,
     fetch_document_content,
@@ -20,7 +20,7 @@ from app.services.google_docs import (
 router = APIRouter(tags=["resume"])
 
 # In-memory fallback resume data for when Google Docs is not configured
-FALLBACK_RESUME = Resume(
+FALLBACK_RESUME = ResumeLegacy(
     name="Your Name",
     email="your.email@example.com",
     phone="+1 (555) 123-4567",
@@ -75,7 +75,7 @@ FALLBACK_RESUME = Resume(
 )
 
 
-@router.get("/resume", response_model=Resume)
+@router.get("/resume", response_model=ResumeLegacy)
 async def get_resume():
     """
     Fetch the resume data.

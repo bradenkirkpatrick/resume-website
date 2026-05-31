@@ -12,6 +12,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
+from app.routes.education import router as education_router
+from app.routes.experiences import router as experiences_router
+from app.routes.person import router as person_router
 from app.routes.projects import router as projects_router
 from app.routes.resume import router as resume_router
 from app.routes.sections import router as sections_router
@@ -20,8 +23,8 @@ load_dotenv()
 
 app = FastAPI(
     title="Resume Website API",
-    description="API for serving resume data and managing projects",
-    version="1.0.0",
+    description="Resume data API with Person, Education, Projects, Experiences",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -33,7 +36,10 @@ app.add_middleware(
 )
 
 app.include_router(resume_router, prefix="/api")
+app.include_router(person_router, prefix="/api")
+app.include_router(education_router, prefix="/api")
 app.include_router(projects_router, prefix="/api")
+app.include_router(experiences_router, prefix="/api")
 app.include_router(sections_router, prefix="/api")
 
 

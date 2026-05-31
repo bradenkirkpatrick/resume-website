@@ -1,141 +1,222 @@
 """
 Data models for the Resume Website application.
 
-These Pydantic models define the structure of resume data
-serialized to/from the API.
+Pydantic models for the normalized schema:
+  Person, Education, Projects, Experiences
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-class Experience(BaseModel):
-    """Professional experience entry."""
+# ── Person ─────────────────────────────────────────────────────────────────────
 
-    company: str = Field(..., description="Company name")
-    title: str = Field(..., description="Job title")
-    start_date: date = Field(..., description="Start date")
-    end_date: Optional[date] = Field(None, description="End date (None if current)")
-    description: list[str] = Field(default_factory=list, description="List of responsibilities")
-
-
-class Education(BaseModel):
-    """Education entry."""
-
-    institution: str = Field(..., description="School or university name")
-    degree: str = Field(..., description="Degree obtained")
-    field_of_study: str = Field(..., description="Major or field of study")
-    graduation_date: date = Field(..., description="Graduation date")
-    gpa: Optional[float] = Field(None, description="GPA if applicable")
+class PersonCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    city: Optional[str] = None
+    state: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 
-class Skill(BaseModel):
-    """Skill entry."""
-
-    category: str = Field(..., description="Skill category (e.g., Languages, Tools)")
-    items: list[str] = Field(..., description="List of skills in this category")
-
-
-class Project(BaseModel):
-    """Project entry."""
-
-    name: str = Field(..., description="Project name")
-    personal_title: Optional[str] = Field(None, description="Your role or title on this project")
-    description: str = Field(..., description="Short description")
-    technologies: list[str] = Field(default_factory=list, description="Technologies used")
-    url: Optional[str] = Field(None, description="Project URL")
+class PersonUpdate(BaseModel):
+    name: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 
-class Resume(BaseModel):
-    """Complete resume data model."""
-
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    phone: Optional[str] = Field(None, description="Phone number")
-    location: Optional[str] = Field(None, description="Location")
-    linkedin_url: Optional[str] = Field(None, description="LinkedIn profile URL")
-    summary: str = Field(..., description="Professional summary")
-    experience: list[Experience] = Field(default_factory=list, description="Work experience")
-    education: list[Education] = Field(default_factory=list, description="Education history")
-    skills: list[Skill] = Field(default_factory=list, description="Skills")
-    projects: list[Project] = Field(default_factory=list, description="Projects")
-    certifications: list[str] = Field(default_factory=list, description="Certifications")
-
-
-# ── Project Management Models ──────────────────────────────────────────────────
-
-
-class BulletPointCreate(BaseModel):
-    """Schema for creating a bullet point."""
-
-    text: str = Field(..., min_length=1, description="Bullet point text")
-    order: int = Field(0, description="Display order")
-
-
-class BulletPointOut(BulletPointCreate):
-    """Schema for returning a bullet point."""
-
-    id: int
-
-
-class TagOut(BaseModel):
-    """Schema for returning a tag."""
-
-    id: int
+class PersonOut(BaseModel):
+    person_id: int
     name: str
-
-
-class ProjectCreate(BaseModel):
-    """Schema for creating a new project."""
-
-    title: str = Field(..., min_length=1, max_length=255, description="Project title")
-    personal_title: Optional[str] = Field(None, max_length=255, description="Your role on this project")
-    start_month: int = Field(..., ge=1, le=12, description="Start month (1-12)")
-    start_year: int = Field(..., ge=1900, le=2100, description="Start year")
-    end_month: Optional[int] = Field(None, ge=1, le=12, description="End month")
-    end_year: Optional[int] = Field(None, ge=1900, le=2100, description="End year")
-    technologies: list[str] = Field(default_factory=list, description="Technologies used")
-    frameworks: list[str] = Field(default_factory=list, description="Frameworks used")
-    languages: list[str] = Field(default_factory=list, description="Languages used")
-    bullet_points: list[str] = Field(default_factory=list, description="Numbered bullet points")
-    tags: list[str] = Field(default_factory=list, description="Project tags")
-
-
-class ProjectUpdate(BaseModel):
-    """Schema for updating an existing project."""
-
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    personal_title: Optional[str] = Field(None, max_length=255)
-    start_month: Optional[int] = Field(None, ge=1, le=12)
-    start_year: Optional[int] = Field(None, ge=1900, le=2100)
-    end_month: Optional[int] = Field(None, ge=1, le=12)
-    end_year: Optional[int] = Field(None, ge=1900, le=2100)
-    technologies: Optional[list[str]] = None
-    frameworks: Optional[list[str]] = None
-    languages: Optional[list[str]] = None
-    bullet_points: Optional[list[str]] = None
-    tags: Optional[list[str]] = None
-
-
-class ProjectOut(BaseModel):
-    """Schema for returning a project."""
-
-    id: int
-    title: str
-    personal_title: Optional[str] = None
-    start_month: int
-    start_year: int
-    end_month: Optional[int] = None
-    end_year: Optional[int] = None
-    technologies: list[str] = Field(default_factory=list)
-    frameworks: list[str] = Field(default_factory=list)
-    languages: list[str] = Field(default_factory=list)
-    bullet_points: list[str] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+# ── Education ──────────────────────────────────────────────────────────────────
+
+class EducationCreate(BaseModel):
+    person_id: int
+    school: str = Field(..., min_length=1, max_length=255)
+    city: Optional[str] = None
+    state: Optional[str] = None
+    degree: Optional[str] = None
+    degree_minor: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    relevant_courses: Optional[str] = None
+
+
+class EducationUpdate(BaseModel):
+    school: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    degree: Optional[str] = None
+    degree_minor: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    relevant_courses: Optional[str] = None
+
+
+class EducationOut(BaseModel):
+    id: int
+    person_id: int
+    school: str
+    city: Optional[str] = None
+    state: Optional[str] = None
+    degree: Optional[str] = None
+    degree_minor: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    relevant_courses: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ── Projects ───────────────────────────────────────────────────────────────────
+
+class ProjectCreate(BaseModel):
+    person_id: int
+    project_name: str = Field(..., min_length=1, max_length=255)
+    project_role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: list[str] = Field(default_factory=list)
+    frameworks: list[str] = Field(default_factory=list)
+    languages: list[str] = Field(default_factory=list)
+    technologies: list[str] = Field(default_factory=list)
+
+
+class ProjectUpdate(BaseModel):
+    project_name: Optional[str] = None
+    project_role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: Optional[list[str]] = None
+    frameworks: Optional[list[str]] = None
+    languages: Optional[list[str]] = None
+    technologies: Optional[list[str]] = None
+
+
+class ProjectOut(BaseModel):
+    id: int
+    person_id: int
+    project_name: str
+    project_role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: list[str] = Field(default_factory=list)
+    frameworks: list[str] = Field(default_factory=list)
+    languages: list[str] = Field(default_factory=list)
+    technologies: list[str] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+# ── Experiences ────────────────────────────────────────────────────────────────
+
+class ExperienceCreate(BaseModel):
+    person_id: int
+    company: str = Field(..., min_length=1, max_length=255)
+    city: Optional[str] = None
+    state: Optional[str] = None
+    role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: list[str] = Field(default_factory=list)
+
+
+class ExperienceUpdate(BaseModel):
+    company: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: Optional[list[str]] = None
+
+
+class ExperienceOut(BaseModel):
+    id: int
+    person_id: int
+    company: str
+    city: Optional[str] = None
+    state: Optional[str] = None
+    role: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    bullet_points: list[str] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+# ── Query Results ──────────────────────────────────────────────────────────────
+
+class TechItemOut(BaseModel):
+    name: str
+
+# ── Legacy models (for Google Doc parser compatibility) ────────────────────────
+
+class LegacyExperience(BaseModel):
+    company: str = ""
+    title: str = ""
+    start_date: date = date.today()
+    end_date: Optional[date] = None
+    description: list[str] = Field(default_factory=list)
+
+
+class LegacyEducation(BaseModel):
+    institution: str = ""
+    degree: str = ""
+    field_of_study: str = ""
+    graduation_date: date = date.today()
+    gpa: Optional[float] = None
+
+
+class LegacySkill(BaseModel):
+    category: str = ""
+    items: list[str] = Field(default_factory=list)
+
+
+class LegacyProject(BaseModel):
+    name: str = ""
+    personal_title: Optional[str] = None
+    description: str = ""
+    technologies: list[str] = Field(default_factory=list)
+    url: Optional[str] = None
+
+
+class ResumeLegacy(BaseModel):
+    name: str = ""
+    email: str = ""
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    summary: str = ""
+    experience: list[LegacyExperience] = Field(default_factory=list)
+    education: list[LegacyEducation] = Field(default_factory=list)
+    skills: list[LegacySkill] = Field(default_factory=list)
+    projects: list[LegacyProject] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+
+
+# Aliases for backward compat with Google Doc parser
+Experience = LegacyExperience
+Education = LegacyEducation
+Skill = LegacySkill
+Project = LegacyProject
+Resume = ResumeLegacy
